@@ -1,14 +1,17 @@
 package com.littlebencreations.roombcontrol;
 
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -17,13 +20,15 @@ import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     public final String ACTION_USB_PERMISSION = "com.hariharan.arduinousb.USB_PERMISSION";
 
     //Button startButton, sendButton, clearButton, stopButton;
 
-    Button connectButton, disconnectButton, forwardButton, backwardButton,
+    Button connectButton, disconnectButton, forwardButton, backwardButton;
     TextView distanceText;
     UsbManager usbManager;
     UsbDevice device;
@@ -47,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     void setUiEnabled(boolean state) {
+        //        stopButton.setEnabled(bool);
 
     }
 
@@ -67,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
                             serialPort.setParity(UsbSerialInterface.PARITY_NONE);
                             serialPort.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
                             serialPort.read(mCallback);
-                            tvAppend(textView,"Serial Connection Opened!\n");
+                            //tvAppend(textView,"Serial Connection Opened!\n");
 
                         } else {
                             Log.d("SERIAL", "PORT NOT OPEN");
@@ -79,9 +85,11 @@ public class MainActivity extends AppCompatActivity {
                     Log.d("SERIAL", "PERM NOT GRANTED");
                 }
             } else if (intent.getAction().equals(UsbManager.ACTION_USB_DEVICE_ATTACHED)) {
-                onClickStart(startButton);
+                //onClickStart(startButton);
+
             } else if (intent.getAction().equals(UsbManager.ACTION_USB_DEVICE_DETACHED)) {
-                onClickStop(stopButton);
+
+                //onClickStop(stopButton);
 
             }
         }
@@ -90,9 +98,80 @@ public class MainActivity extends AppCompatActivity {
     };
 
 
-            @Override
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        usbManager = (UsbManager) getSystemService(this.USB_SERVICE);
+        setUiEnabled(false);
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(ACTION_USB_PERMISSION);
+        filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
+        filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
+        registerReceiver(broadcastReceiver, filter);
+
+
     }
+
+    public void sendString(String string) {
+        serialPort.write(string.getBytes());
+    }
+
+    public void goForward(View view) {
+        sendString("f");
+    }
+
+    public void goBackward(View view) {
+        sendString("b");
+    }
+
+    public void goLeft(View view) {
+        sendString("l");
+    }
+
+    public void goRight(View view) {
+        sendString("r");
+    }
+
+    public void stopMoving(View view) {
+        sendString("s");
+    }
+
+    public void onClickStart(View view) {
+
+        HashMap<String, UsbDevice> usbDevices = usbManager.getDeviceList();
+        if (!usbDevices.isEmpty()) {
+            boolean keep = true;
+            for (Map.Entry<String, UsbDevice> entry : usbDevices.entrySet()) {
+                device = entry.getValue();
+                int deviceVID = device.getVendorId();
+                if (deviceVID == 0x2341)//Arduino Vendor ID
+                {
+                    PendingIntent pi = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
+                    usbManager.requestPermission(device, pi);
+                    keep = false;
+                } else {
+                    connection = null;
+                    device = null;
+                }
+
+                if (!keep)
+                    break;
+            }
+        }
+
+
+    }
+
+    public void onClickStop(View view) {
+        setUiEnabled(false);
+        serialPort.close();
+        //tvAppend(textView,"\nSerial Connection Closed! \n");
+
+    }
+
+
+
+
 }
