@@ -10,6 +10,7 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
@@ -149,13 +150,17 @@ public class RoombaController {
     }
 
     public void disconnect() {
+        Toast.makeText(mContext, "Starting disconnect!", Toast.LENGTH_LONG).show();
         if (serialPort == null) {
+            Toast.makeText(mContext, "Serial in null!", Toast.LENGTH_LONG).show();
             return;
         }
-
         sendString("x");
+        Toast.makeText(mContext, "Sent disconnect message!", Toast.LENGTH_LONG).show();
         serialPort.close();
+        Toast.makeText(mContext, "Closed port!", Toast.LENGTH_LONG).show();
         containerActivity.setUiEnabled(false);
+        Toast.makeText(mContext, "Disconnected!", Toast.LENGTH_LONG).show();
     }
 
     public void connect() {
@@ -175,8 +180,10 @@ public class RoombaController {
                     device = null;
                 }
 
-                if (foundArduino)
+                if (foundArduino) {
+                    Toast.makeText(mContext, "Connected!", Toast.LENGTH_LONG).show();
                     break;
+                }
             }
         }
     }
