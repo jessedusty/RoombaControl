@@ -42,7 +42,6 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     Button connectButton, disconnectButton, forwardButton, reverseButton, leftButton, rightButton, stopMoveButton, enableTButton, disableTButton, trigEnableButton, trigDisableButton;
 
 
-
     TextView distanceTextView;
     UsbManager usbManager;
     UsbDevice device;
@@ -137,7 +136,6 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     };
 
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -152,22 +150,22 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
         filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
         filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
 
-        //registerReceiver(broadcastReceiver, filter);
+        registerReceiver(broadcastReceiver, filter);
 
 
-        connectButton = (Button)findViewById(R.id.connectButton);
-        disconnectButton = (Button)findViewById(R.id.disconnectButton);
-        forwardButton = (Button)findViewById(R.id.forwardButton);
-        reverseButton = (Button)findViewById(R.id.reverseButton);
-        leftButton = (Button)findViewById(R.id.leftButton);
-        rightButton = (Button)findViewById(R.id.rightButton);
-        stopMoveButton = (Button)findViewById(R.id.stopMoveButton);
-        enableTButton = (Button)findViewById(R.id.enableTButton);
-        disableTButton = (Button)findViewById(R.id.disableTButton);
-        trigEnableButton = (Button)findViewById(R.id.trigEnableButton);
-        trigDisableButton = (Button)findViewById(R.id.trigDisableButton);
+        connectButton = (Button) findViewById(R.id.connectButton);
+        disconnectButton = (Button) findViewById(R.id.disconnectButton);
+        forwardButton = (Button) findViewById(R.id.forwardButton);
+        reverseButton = (Button) findViewById(R.id.reverseButton);
+        leftButton = (Button) findViewById(R.id.leftButton);
+        rightButton = (Button) findViewById(R.id.rightButton);
+        stopMoveButton = (Button) findViewById(R.id.stopMoveButton);
+        enableTButton = (Button) findViewById(R.id.enableTButton);
+        disableTButton = (Button) findViewById(R.id.disableTButton);
+        trigEnableButton = (Button) findViewById(R.id.trigEnableButton);
+        trigDisableButton = (Button) findViewById(R.id.trigDisableButton);
 
-        distanceTextView = (TextView)findViewById(R.id.distanceText);
+        distanceTextView = (TextView) findViewById(R.id.distanceText);
 
         setUiEnabled(false);
 
@@ -224,7 +222,9 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
                     Beacon firstBeacon = beacons.iterator().next();
                     distanceText = firstBeacon.getDistance() + " meters away.";
                     //distanceText.setText(distanceText);
+
                     System.out.println(distanceText);
+                    printDistanceText(distanceText);
                 }
             }
 
@@ -297,7 +297,15 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
     }
 
+    public void printDistanceText(final String line) {
+        {
+            runOnUiThread(new Runnable() {
+                public void run() {
+                    TextView editText = (TextView) MainActivity.this.findViewById(R.id.distanceText);
+                    editText.setText(line);
+                }
+            });
+        }
 
-
-
+    }
 }
