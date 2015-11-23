@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
+import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -19,12 +20,22 @@ import android.widget.TextView;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 
+import org.altbeacon.beacon.Beacon;
+import org.altbeacon.beacon.BeaconConsumer;
+import org.altbeacon.beacon.BeaconManager;
+import org.altbeacon.beacon.RangeNotifier;
+import org.altbeacon.beacon.Region;
+import org.altbeacon.beacon.service.ArmaRssiFilter;
+
 import java.io.UnsupportedEncodingException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     public final String ACTION_USB_PERMISSION = "com.hariharan.arduinousb.USB_PERMISSION";
+
+    private BeaconManager beaconManager;
 
     //Button startButton, sendButton, clearButton, stopButton;
 
@@ -32,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    TextView distanceText;
+    TextView distanceTextView;
     UsbManager usbManager;
     UsbDevice device;
     UsbSerialDevice serialPort;
@@ -130,6 +141,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        beaconManager = BeaconManager.getInstanceForApplication(this);
+
         setContentView(R.layout.activity_main);
         usbManager = (UsbManager) getSystemService(this.USB_SERVICE);
 
@@ -137,7 +151,8 @@ public class MainActivity extends AppCompatActivity {
         filter.addAction(ACTION_USB_PERMISSION);
         filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
         filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
-        registerReceiver(broadcastReceiver, filter);
+
+        //registerReceiver(broadcastReceiver, filter);
 
 
         connectButton = (Button)findViewById(R.id.connectButton);
@@ -151,8 +166,42 @@ public class MainActivity extends AppCompatActivity {
         disableTButton = (Button)findViewById(R.id.disableTButton);
         trigEnableButton = (Button)findViewById(R.id.trigEnableButton);
         trigDisableButton = (Button)findViewById(R.id.trigDisableButton);
+
+        distanceTextView = (TextView)findViewById(R.id.distanceText);
+
         setUiEnabled(false);
 
+        beaconManager.setForegroundBetweenScanPeriod(0);
+        beaconManager.setForegroundScanPeriod(100);
+
+        BeaconManager.setRssiFilterImplClass(ArmaRssiFilter.class);
+
+        beaconManager.bind(this);
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                distanceTextView.setText(distanceText);
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        beaconManager.unbind(this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (beaconManager.isBound(this)) beaconManager.setBackgroundMode(true);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (beaconManager.isBound(this)) beaconManager.setBackgroundMode(false);
     }
 
     public void sendString(String string) {
@@ -161,6 +210,32 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         serialPort.write(string.getBytes());
+    }
+
+    String distanceText = "";
+
+    public void onBeaconServiceConnect() {
+
+        beaconManager.setRangeNotifier(new RangeNotifier() {
+            @Override
+            public void didRangeBeaconsInRegion(Collection<Beacon> beacons, Region region) {
+                if (beacons.size() > 0) {
+                    //EditText editText = (EditText)RangingActivity.this.findViewById(R.id.rangingText);
+                    Beacon firstBeacon = beacons.iterator().next();
+                    distanceText = firstBeacon.getDistance() + " meters away.";
+                    //distanceText.setText(distanceText);
+                    System.out.println(distanceText);
+                }
+            }
+
+        });
+
+
+        try {
+            beaconManager.startRangingBeaconsInRegion(new Region("myRangingUniqueId", null, null, null));
+        } catch (RemoteException e) {
+            System.out.println("Not used");
+        }
     }
 
     public void goForward(View view) {
