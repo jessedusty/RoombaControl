@@ -69,8 +69,8 @@ public class MainActivity extends AppCompatActivity {
             stopMoveButton.setEnabled(state);
             enableTButton.setEnabled(state);
             disableTButton.setEnabled(state);
-            trigEnableButton.setEnabled(state);
-            trigDisableButton.setEnabled(state);
+            //trigEnableButton.setEnabled(state);
+            //trigDisableButton.setEnabled(state);
         }
     }
 
@@ -86,10 +86,12 @@ public class MainActivity extends AppCompatActivity {
         leftButton = (Button)findViewById(R.id.leftButton);
         rightButton = (Button)findViewById(R.id.rightButton);
         stopMoveButton = (Button)findViewById(R.id.stopMoveButton);
-        /*enableTButton = (Button)findViewById(R.id.enableTButton);
-        disableTButton = (Button)findViewById(R.id.disableTButton);
+        enableTButton = (Button)findViewById(R.id.startTrackingButton);
+        disableTButton = (Button)findViewById(R.id.stopTrackingButton);
+        /*
         trigEnableButton = (Button)findViewById(R.id.trigEnableButton);
-        trigDisableButton = (Button)findViewById(R.id.trigDisableButton);*/
+        trigDisableButton = (Button)findViewById(R.id.trigDisableButton);
+        */
         setUiEnabled(false);
 
         roombaController = new RoombaController(this);
@@ -180,6 +182,29 @@ public class MainActivity extends AppCompatActivity {
         protected void onProgressUpdate(String... values) {
             super.onProgressUpdate(values);
         }
+    }
+
+    public void directionButtonPressed(View view) {
+        TextView origin = (TextView)view;
+        switch ((String)origin.getText()) {
+            case "Forward":
+                roombaController.goForward();
+                break;
+            case "Backward":
+                roombaController.goBackward();
+                break;
+            case "Left":
+                roombaController.goLeft();
+                break;
+            case "Right":
+                roombaController.goRight();
+                break;
+            case "Stop":
+                roombaController.stopMoving();
+                break;
+
+        }
+
     }
 
 }
