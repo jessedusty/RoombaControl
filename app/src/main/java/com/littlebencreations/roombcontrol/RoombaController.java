@@ -9,7 +9,6 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.util.Log;
-import android.view.View;
 
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
@@ -40,7 +39,8 @@ public class RoombaController {
 
     private String currentAction;
 
-    private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() { //Broadcast Receiver to automatically start and stop the Serial connection.
+    private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+    //Broadcast Receiver to automatically start and stop the Serial connection.
         @Override
         public void onReceive(Context context, Intent intent) {
             if (intent.getAction().equals(ACTION_USB_PERMISSION)) {
@@ -76,11 +76,11 @@ public class RoombaController {
             } else if (intent.getAction().equals(UsbManager.ACTION_USB_DEVICE_ATTACHED)) {
 
                 System.out.println("connected");
-                onClickStart();
+                connect();
 
             } else if (intent.getAction().equals(UsbManager.ACTION_USB_DEVICE_DETACHED)) {
                 System.out.println("disconnected");
-                onClickStop();
+                connect();
             }
         }
     };
@@ -94,7 +94,7 @@ public class RoombaController {
                 data = new String(bytes, "UTF-8");
                 data.concat("/n");
             } catch (UnsupportedEncodingException e) {
-                Log.e(LOG_TAG, "Unsupported encoding recieved", e);
+                Log.e(LOG_TAG, "Unsupported encoding received", e);
             }
             System.out.println(data);
         }
@@ -108,16 +108,15 @@ public class RoombaController {
         IntentFilter filter = new IntentFilter();
         filter.addAction(ACTION_USB_PERMISSION);
         filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
-        filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
         mContext.registerReceiver(broadcastReceiver, filter);
 
         currentAction = ACTION_STAY;
     }
 
     /* Serial Interfacing */
-    public void sendString(String string) {
+    private void sendString(String string) {
         if (serialPort == null) {
-            System.out.println("Device not attached");
+            Log.e(LOG_TAG, "Device not attached");
             return;
         }
         serialPort.write(string.getBytes());
@@ -147,17 +146,15 @@ public class RoombaController {
         sendString("x");
     }
 
-    public void onClickStop() {
+    public void stopConnection() {
         sendString("x");
         serialPort.close();
     }
 
-
-    public void onClickStart() {
-
+    private void connect() {
         HashMap<String, UsbDevice> usbDevices = usbManager.getDeviceList();
         if (!usbDevices.isEmpty()) {
-            boolean keep = true;
+            boolean foundArduino = false;
             for (Map.Entry<String, UsbDevice> entry : usbDevices.entrySet()) {
                 device = entry.getValue();
                 int deviceVID = device.getVendorId();
@@ -165,19 +162,17 @@ public class RoombaController {
                 {
                     PendingIntent pi = PendingIntent.getBroadcast(mContext, 0, new Intent(ACTION_USB_PERMISSION), 0);
                     usbManager.requestPermission(device, pi);
-                    keep = false;
+                    foundArduino = true;
                 } else {
                     connection = null;
                     device = null;
                 }
 
-                if (!keep)
+                if (foundArduino)
                     break;
             }
         }
-        //sendString("o");
     }
-
 
     /* Popcorn control */
     private void setCurrentAction(String action) {
@@ -210,6 +205,7 @@ public class RoombaController {
 
     }
 
+    /** */
     public void comeback() {
         if (currentAction.equals(ACTION_COMEBACK)) {
             // Don't do anything if we're already doing it
