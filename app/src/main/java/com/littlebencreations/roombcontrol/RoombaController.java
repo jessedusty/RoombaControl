@@ -207,6 +207,8 @@ public class RoombaController {
             return;
         }
         setCurrentAction(ACTION_DELIVER);
+        // For the demo hehe
+        goForward();
     }
 
     /** Really don't need this, but would be nice if we shifted to a listen/respond model */
@@ -216,7 +218,7 @@ public class RoombaController {
             return;
         }
         setCurrentAction(ACTION_STAY);
-
+        stopMoving();
     }
 
     /** */
@@ -226,6 +228,6 @@ public class RoombaController {
             return;
         }
         setCurrentAction(ACTION_COMEBACK);
-
+        goBackward();
     }
 }
