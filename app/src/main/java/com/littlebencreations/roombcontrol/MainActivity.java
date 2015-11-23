@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
+import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -21,6 +22,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import cz.msebera.android.httpclient.Header;
 
@@ -34,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
     //private Button startButton, sendButton, clearButton, stopButton;
     private Button connectButton, disconnectButton, forwardButton, backwardButton;
-    private TextView distanceText;
+    private TextView distanceText, popcornText;
     private UsbManager usbManager;
     private UsbDevice device;
     private UsbSerialDevice serialPort;
@@ -101,7 +104,12 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         roombaController = new RoombaController();
-        mainLoop();
+        distanceText = (TextView) findViewById(R.id.distanceText);
+        popcornText = (TextView) findViewById(R.id.popcornMessage);
+
+        // Should just be calling and updating in the background
+        ServerCaller serverCaller = new ServerCaller(this, roombaController, popcornText);
+        serverCaller.execute();
     }
 
     /**
@@ -112,13 +120,25 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    /* In this call and response model, will have a */
-    public void mainLoop() {
-        while (!roombaController.getCurrentAction().equals(RoombaController.ACTION_STAY)) {
-            // First Call server
-            // Analyze Response
-            // Call action in bot
-            mServer = new PopServer(this,  new JsonHttpResponseHandler() {
+    private static class ServerCaller extends AsyncTask<Void, String, Void> {
+        private static final String LOG_TAG = ServerCaller.class.getSimpleName();
+
+        private final Context CONTEXT;
+        private final RoombaController CONTROLLER;
+        private final PopServer SERVER;
+        private final TextView MESSAGE_VIEW;
+
+        private final long UPDATE_INTERVOL = 500; // update every half second // MILLISECONDS
+        private Timer callTimer;
+
+        public ServerCaller(Context context, RoombaController controller, final TextView messageView) {
+            CONTEXT = context;
+            CONTROLLER = controller;
+            MESSAGE_VIEW = messageView;
+
+            callTimer = new Timer();
+
+            SERVER = new PopServer(new JsonHttpResponseHandler() {
                 @Override
                 public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
                     // Get the command
@@ -128,36 +148,55 @@ public class MainActivity extends AppCompatActivity {
                         action = response.getString(PopServer.ACTION_KEY);
                         if (response.has(PopServer.MESSAGE_KEY)) {
                             message = response.getString(PopServer.MESSAGE_KEY);
+                            // Could also post this as a progress update
+                            messageView.setText(message);
                         }
                     } catch (JSONException e) {
-                        Log.e(LOG_TAG, "Problem with popserver response", e);
+                        Log.e(LOG_TAG, "Problem with pop server response", e);
                     }
 
                     switch (action) {
+                        case RoombaController.ACTION_STAY:
+                            CONTROLLER.stay();
+                            break;
                         case RoombaController.ACTION_DELIVER:
-                            roombaController.deliver();
+                            CONTROLLER.deliver();
                             break;
                         case RoombaController.ACTION_COMEBACK:
-                            roombaController.comeback();
+                            CONTROLLER.comeback();
                             break;
                         default:
-                            // Do nothing
+                            // Do nothing if we get a bad response
                     }
                 }
 
                 @Override
                 public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
                     super.onFailure(statusCode, headers, throwable, errorResponse);
-                    Toast.makeText(getApplicationContext(), "Error with server: " + errorResponse.toString(),
+                    Toast.makeText(CONTEXT, "Error with server: " + errorResponse.toString(),
                             Toast.LENGTH_LONG).show();
                 }
             });
-
-            mServer.getCommand();
         }
 
-        // Now the robot is doing things, still don't really like this
-        // methodology but whatevs
+        @Override
+        protected Void doInBackground(Void... params) {
+            // Call the server every so often and update the action of the robot
+            // Again, not necessarily the best way to do this
+            // Will cause this thread to run infinitely
+            callTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    SERVER.getCommand();
+                                   }
+                               }, 0, UPDATE_INTERVOL);
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(String... values) {
+            super.onProgressUpdate(values);
+        }
     }
 
 }

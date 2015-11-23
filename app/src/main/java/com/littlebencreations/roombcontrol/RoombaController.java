@@ -18,7 +18,7 @@ public class RoombaController {
         currentAction = ACTION_STAY;
     }
 
-    public void setCurrentAction(String action) {
+    private void setCurrentAction(String action) {
         this.currentAction = action;
     }
 
@@ -26,16 +26,33 @@ public class RoombaController {
         return currentAction;
     }
 
+    /**
+     * Needs to interface with the arduino to launch the roomba's
+     * clean movement. It will get to you. Eventually.
+     */
     public void deliver() {
+        if (currentAction.equals(ACTION_DELIVER)) {
+            // Don't do anything if we're already doing it
+            return;
+        }
         setCurrentAction(ACTION_DELIVER);
     }
 
+    /** Really don't need this, but would be nice if we shifted to a listen/respond model */
     public void stay() {
+        if (currentAction.equals(ACTION_STAY)) {
+            // Don't do anything if we're already doing it
+            return;
+        }
         setCurrentAction(ACTION_STAY);
 
     }
 
     public void comeback() {
+        if (currentAction.equals(ACTION_COMEBACK)) {
+            // Don't do anything if we're already doing it
+            return;
+        }
         setCurrentAction(ACTION_COMEBACK);
 
     }

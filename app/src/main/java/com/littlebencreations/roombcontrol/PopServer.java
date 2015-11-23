@@ -20,11 +20,9 @@ public class PopServer {
     public static final String MESSAGE_KEY = "command";
 
 
-    private Context mContext;
     private JsonHttpResponseHandler mListener;
 
-    public PopServer(Context context, JsonHttpResponseHandler listener) {
-        mContext = context;
+    public PopServer(JsonHttpResponseHandler listener) {
         mListener = listener;
     }
 
