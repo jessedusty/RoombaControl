@@ -1,46 +1,54 @@
 package com.littlebencreations.roombcontrol;
 
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
+import com.loopj.android.http.JsonHttpResponseHandler;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-import java.util.Map;
 
+import cz.msebera.android.httpclient.Header;
+
+
+/**
+ *
+ */
 public class MainActivity extends AppCompatActivity {
+    private static final String LOG_TAG = MainActivity.class.getSimpleName();
     public final String ACTION_USB_PERMISSION = "com.hariharan.arduinousb.USB_PERMISSION";
 
-    //Button startButton, sendButton, clearButton, stopButton;
+    //private Button startButton, sendButton, clearButton, stopButton;
+    private Button connectButton, disconnectButton, forwardButton, backwardButton;
+    private TextView distanceText;
+    private UsbManager usbManager;
+    private UsbDevice device;
+    private UsbSerialDevice serialPort;
+    private UsbDeviceConnection connection;
 
-    Button connectButton, disconnectButton, forwardButton, backwardButton;
-    TextView distanceText;
-    UsbManager usbManager;
-    UsbDevice device;
-    UsbSerialDevice serialPort;
-    UsbDeviceConnection connection;
+    private PopServer mServer;
+    private RoombaController roombaController;
 
-    UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback() { //Defining a Callback which triggers whenever data is read.
+    private UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback() { //Defining a Callback which triggers whenever data is read.
         @Override
-        public void onReceivedData(byte[] arg0) {
+        public void onReceivedData(byte[] bytes) {
             String data = null;
             try {
-                data = new String(arg0, "UTF-8");
+                data = new String(bytes, "UTF-8");
                 data.concat("/n");
                 //tvAppend(textView, data);
             } catch (UnsupportedEncodingException e) {
@@ -50,12 +58,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-
-    void setUiEnabled(boolean state) {
-        //        stopButton.setEnabled(bool);
-
-    }
-
+    /* This should be an intent filter in the manifest methinks? */
     private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() { //Broadcast Receiver to automatically start and stop the Serial connection.
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -86,92 +89,75 @@ public class MainActivity extends AppCompatActivity {
                 }
             } else if (intent.getAction().equals(UsbManager.ACTION_USB_DEVICE_ATTACHED)) {
                 //onClickStart(startButton);
-
             } else if (intent.getAction().equals(UsbManager.ACTION_USB_DEVICE_DETACHED)) {
-
                 //onClickStop(stopButton);
-
             }
         }
-
-        ;
     };
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        usbManager = (UsbManager) getSystemService(this.USB_SERVICE);
-        setUiEnabled(false);
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(ACTION_USB_PERMISSION);
-        filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
-        filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
-        registerReceiver(broadcastReceiver, filter);
 
+        roombaController = new RoombaController();
+        mainLoop();
+    }
+
+    /**
+     * What does this do?
+     * @param state
+     */
+    public void setUiEnabled(boolean state) {
 
     }
 
-    public void sendString(String string) {
-        serialPort.write(string.getBytes());
-    }
+    /* In this call and response model, will have a */
+    public void mainLoop() {
+        while (!roombaController.getCurrentAction().equals(RoombaController.ACTION_STAY)) {
+            // First Call server
+            // Analyze Response
+            // Call action in bot
+            mServer = new PopServer(this,  new JsonHttpResponseHandler() {
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                    // Get the command
+                    // Set the message if there is one
+                    String message = null, action = "";
+                    try {
+                        action = response.getString(PopServer.ACTION_KEY);
+                        if (response.has(PopServer.MESSAGE_KEY)) {
+                            message = response.getString(PopServer.MESSAGE_KEY);
+                        }
+                    } catch (JSONException e) {
+                        Log.e(LOG_TAG, "Problem with popserver response", e);
+                    }
 
-    public void goForward(View view) {
-        sendString("f");
-    }
-
-    public void goBackward(View view) {
-        sendString("b");
-    }
-
-    public void goLeft(View view) {
-        sendString("l");
-    }
-
-    public void goRight(View view) {
-        sendString("r");
-    }
-
-    public void stopMoving(View view) {
-        sendString("s");
-    }
-
-    public void onClickStart(View view) {
-
-        HashMap<String, UsbDevice> usbDevices = usbManager.getDeviceList();
-        if (!usbDevices.isEmpty()) {
-            boolean keep = true;
-            for (Map.Entry<String, UsbDevice> entry : usbDevices.entrySet()) {
-                device = entry.getValue();
-                int deviceVID = device.getVendorId();
-                if (deviceVID == 0x2341)//Arduino Vendor ID
-                {
-                    PendingIntent pi = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
-                    usbManager.requestPermission(device, pi);
-                    keep = false;
-                } else {
-                    connection = null;
-                    device = null;
+                    switch (action) {
+                        case RoombaController.ACTION_DELIVER:
+                            roombaController.deliver();
+                            break;
+                        case RoombaController.ACTION_COMEBACK:
+                            roombaController.comeback();
+                            break;
+                        default:
+                            // Do nothing
+                    }
                 }
 
-                if (!keep)
-                    break;
-            }
+                @Override
+                public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+                    super.onFailure(statusCode, headers, throwable, errorResponse);
+                    Toast.makeText(getApplicationContext(), "Error with server: " + errorResponse.toString(),
+                            Toast.LENGTH_LONG).show();
+                }
+            });
+
+            mServer.getCommand();
         }
 
-
+        // Now the robot is doing things, still don't really like this
+        // methodology but whatevs
     }
-
-    public void onClickStop(View view) {
-        setUiEnabled(false);
-        serialPort.close();
-        //tvAppend(textView,"\nSerial Connection Closed! \n");
-
-    }
-
-
-
 
 }
