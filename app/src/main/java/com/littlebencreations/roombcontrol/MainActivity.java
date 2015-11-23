@@ -56,6 +56,24 @@ public class MainActivity extends AppCompatActivity {
 
     void setUiEnabled(boolean state) {
         //        stopButton.setEnabled(bool);
+        if (serialPort == null) {
+            //connectButton.setEnabled(false);
+        } else {
+
+        }
+        connectButton.setEnabled(!state);
+        if (connectButton != null) {
+            disconnectButton.setEnabled(state);
+            forwardButton.setEnabled(state);
+            reverseButton.setEnabled(state);
+            leftButton.setEnabled(state);
+            rightButton.setEnabled(state);
+            stopMoveButton.setEnabled(state);
+            enableTButton.setEnabled(state);
+            disableTButton.setEnabled(state);
+            trigEnableButton.setEnabled(state);
+            trigDisableButton.setEnabled(state);
+        }
 
     }
 
@@ -68,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
                     connection = usbManager.openDevice(device);
                     serialPort = UsbSerialDevice.createUsbSerialDevice(device, connection);
                     if (serialPort != null) {
+                        connectButton.setEnabled(true);
                         if (serialPort.open()) { //Set Serial Connection Parameters.
                             setUiEnabled(true);
                             serialPort.setBaudRate(19200);
@@ -78,21 +97,27 @@ public class MainActivity extends AppCompatActivity {
                             serialPort.read(mCallback);
                             //tvAppend(textView,"Serial Connection Opened!\n");
 
+                            System.out.println("connection opened");
+                            sendString("o");
+
                         } else {
-                            Log.d("SERIAL", "PORT NOT OPEN");
+                            System.out.println("SERIAL" + " PORT NOT OPEN");
                         }
                     } else {
-                        Log.d("SERIAL", "PORT IS NULL");
+                        connectButton.setEnabled(false);
+                        System.out.println("SERIAL" + " PORT IS NULL");
                     }
                 } else {
-                    Log.d("SERIAL", "PERM NOT GRANTED");
+                    System.out.println("SERIAL" + " PERM NOT GRANTED");
                 }
             } else if (intent.getAction().equals(UsbManager.ACTION_USB_DEVICE_ATTACHED)) {
-                //onClickStart(startButton);
+
+                System.out.println("connected");
+                onClickStart(connectButton);
 
             } else if (intent.getAction().equals(UsbManager.ACTION_USB_DEVICE_DETACHED)) {
-
-                //onClickStop(stopButton);
+                System.out.println("disconnected");
+                onClickStop(disconnectButton);
 
             }
         }
@@ -107,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         usbManager = (UsbManager) getSystemService(this.USB_SERVICE);
-        setUiEnabled(false);
+
         IntentFilter filter = new IntentFilter();
         filter.addAction(ACTION_USB_PERMISSION);
         filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
@@ -126,10 +151,15 @@ public class MainActivity extends AppCompatActivity {
         disableTButton = (Button)findViewById(R.id.disableTButton);
         trigEnableButton = (Button)findViewById(R.id.trigEnableButton);
         trigDisableButton = (Button)findViewById(R.id.trigDisableButton);
+        setUiEnabled(false);
 
     }
 
     public void sendString(String string) {
+        if (serialPort == null) {
+            System.out.println("Device not attached");
+            return;
+        }
         serialPort.write(string.getBytes());
     }
 
@@ -175,15 +205,18 @@ public class MainActivity extends AppCompatActivity {
                     break;
             }
         }
-
-        sendString("o");
+        //sendString("o");
 
 
     }
 
-    public void onClickStop(View view) {
-        setUiEnabled(false);
+    public void sleepRoomba(View view) {
         sendString("x");
+    }
+
+    public void onClickStop(View view) {
+        sendString("x");
+        setUiEnabled(false);
         serialPort.close();
         //tvAppend(textView,"\nSerial Connection Closed! \n");
 
