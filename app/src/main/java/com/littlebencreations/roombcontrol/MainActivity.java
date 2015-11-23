@@ -17,11 +17,13 @@ import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 import com.loopj.android.http.JsonHttpResponseHandler;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 
 import cz.msebera.android.httpclient.Header;
+
 
 /**
  *
@@ -39,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
     private UsbDeviceConnection connection;
 
     private PopServer mServer;
-    private RoombaController mRoombaRoombaController;
+    private RoombaController roombaController;
 
     private UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback() { //Defining a Callback which triggers whenever data is read.
         @Override
@@ -97,28 +99,65 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mServer = new PopServer(this,  new JsonHttpResponseHandler() {
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                super.onSuccess(statusCode, headers, response);
-            }
 
-            @Override
-            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
-                super.onFailure(statusCode, headers, throwable, errorResponse);
-                Toast.makeText(getApplicationContext(), "Error with server: " + errorResponse.toString(),
-                        Toast.LENGTH_LONG).show();
-            }
-        }
-        );
+        roombaController = new RoombaController();
+        mainLoop();
     }
 
     /**
      * What does this do?
      * @param state
      */
-    void setUiEnabled(boolean state) {
+    public void setUiEnabled(boolean state) {
 
+    }
+
+    /* In this call and response model, will have a */
+    public void mainLoop() {
+        while (!roombaController.getCurrentAction().equals(RoombaController.ACTION_STAY)) {
+            // First Call server
+            // Analyze Response
+            // Call action in bot
+            mServer = new PopServer(this,  new JsonHttpResponseHandler() {
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                    // Get the command
+                    // Set the message if there is one
+                    String message = null, action = "";
+                    try {
+                        action = response.getString(PopServer.ACTION_KEY);
+                        if (response.has(PopServer.MESSAGE_KEY)) {
+                            message = response.getString(PopServer.MESSAGE_KEY);
+                        }
+                    } catch (JSONException e) {
+                        Log.e(LOG_TAG, "Problem with popserver response", e);
+                    }
+
+                    switch (action) {
+                        case RoombaController.ACTION_DELIVER:
+                            roombaController.deliver();
+                            break;
+                        case RoombaController.ACTION_COMEBACK:
+                            roombaController.comeback();
+                            break;
+                        default:
+                            // Do nothing
+                    }
+                }
+
+                @Override
+                public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+                    super.onFailure(statusCode, headers, throwable, errorResponse);
+                    Toast.makeText(getApplicationContext(), "Error with server: " + errorResponse.toString(),
+                            Toast.LENGTH_LONG).show();
+                }
+            });
+
+            mServer.getCommand();
+        }
+
+        // Now the robot is doing things, still don't really like this
+        // methodology but whatevs
     }
 
 }

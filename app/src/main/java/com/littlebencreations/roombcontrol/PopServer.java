@@ -7,10 +7,6 @@ import android.net.Uri;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
 
-import org.json.JSONObject;
-
-import cz.msebera.android.httpclient.Header;
-
 /**
  * Created by austin on 11/22/15.
  * Built to interface with the simple server for popcorn control
@@ -20,6 +16,9 @@ public class PopServer {
     private static final String LOG_TAG = PopServer.class.getSimpleName();
     private static final String SERVER_URL = "http://155.246.204.55:8000";
     private static final String COMMAND_EXT = "command";
+    public static final String ACTION_KEY = "command";
+    public static final String MESSAGE_KEY = "command";
+
 
     private Context mContext;
     private JsonHttpResponseHandler mListener;
