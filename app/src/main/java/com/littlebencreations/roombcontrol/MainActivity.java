@@ -28,7 +28,10 @@ public class MainActivity extends AppCompatActivity {
 
     //Button startButton, sendButton, clearButton, stopButton;
 
-    Button connectButton, disconnectButton, forwardButton, backwardButton;
+    Button connectButton, disconnectButton, forwardButton, reverseButton, leftButton, rightButton, stopMoveButton, enableTButton, disableTButton, trigEnableButton, trigDisableButton;
+
+
+
     TextView distanceText;
     UsbManager usbManager;
     UsbDevice device;
@@ -112,6 +115,18 @@ public class MainActivity extends AppCompatActivity {
         registerReceiver(broadcastReceiver, filter);
 
 
+        connectButton = (Button)findViewById(R.id.connectButton);
+        disconnectButton = (Button)findViewById(R.id.disconnectButton);
+        forwardButton = (Button)findViewById(R.id.forwardButton);
+        reverseButton = (Button)findViewById(R.id.reverseButton);
+        leftButton = (Button)findViewById(R.id.leftButton);
+        rightButton = (Button)findViewById(R.id.rightButton);
+        stopMoveButton = (Button)findViewById(R.id.stopMoveButton);
+        enableTButton = (Button)findViewById(R.id.enableTButton);
+        disableTButton = (Button)findViewById(R.id.disableTButton);
+        trigEnableButton = (Button)findViewById(R.id.trigEnableButton);
+        trigDisableButton = (Button)findViewById(R.id.trigDisableButton);
+
     }
 
     public void sendString(String string) {
@@ -161,11 +176,14 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        sendString("o");
+
 
     }
 
     public void onClickStop(View view) {
         setUiEnabled(false);
+        sendString("x");
         serialPort.close();
         //tvAppend(textView,"\nSerial Connection Closed! \n");
 

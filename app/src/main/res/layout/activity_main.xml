@@ -16,7 +16,8 @@
         android:id="@+id/leftButton"
         android:layout_above="@+id/reverseButton"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
+        android:layout_alignParentStart="true"
+        android:onClick="goLeft" />
 
     <Button
         android:layout_width="wrap_content"
@@ -24,7 +25,8 @@
         android:text="Forward"
         android:id="@+id/forwardButton"
         android:layout_below="@+id/connectButton"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"
+        android:onClick="goForward" />
 
     <Button
         android:layout_width="wrap_content"
@@ -33,24 +35,28 @@
         android:id="@+id/rightButton"
         android:layout_below="@+id/forwardButton"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
+        android:layout_alignParentEnd="true"
+        android:onClick="goRight" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Stop"
-        android:id="@+id/button4"
+        android:id="@+id/stopMoveButton"
         android:layout_below="@+id/forwardButton"
         android:layout_alignRight="@+id/forwardButton"
-        android:layout_alignEnd="@+id/forwardButton" />
+        android:layout_alignEnd="@+id/forwardButton"
+        android:nestedScrollingEnabled="true"
+        android:onClick="stopMoving" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Reverse"
         android:id="@+id/reverseButton"
-        android:layout_below="@+id/button4"
-        android:layout_alignRight="@+id/forwardButton" />
+        android:layout_below="@+id/stopMoveButton"
+        android:layout_alignRight="@+id/forwardButton"
+        android:onClick="goBackward" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -70,7 +76,8 @@
         android:id="@+id/connectButton"
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
+        android:layout_alignParentStart="true"
+        android:onClick="onClickStart" />
 
     <Button
         android:layout_width="wrap_content"
@@ -79,13 +86,14 @@
         android:id="@+id/disconnectButton"
         android:layout_alignParentTop="true"
         android:layout_alignRight="@+id/rightButton"
-        android:layout_alignEnd="@+id/rightButton" />
+        android:layout_alignEnd="@+id/rightButton"
+        android:onClick="onClickStop" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Start Tracking"
-        android:id="@+id/startButton"
+        android:id="@+id/enableTButton"
         android:layout_centerVertical="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
@@ -94,9 +102,27 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Stop Tracking"
-        android:id="@+id/stopButton"
-        android:layout_alignBottom="@+id/startButton"
+        android:id="@+id/disableTButton"
+        android:layout_alignBottom="@+id/enableTButton"
         android:layout_alignRight="@+id/distanceText"
         android:layout_alignEnd="@+id/distanceText" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Trigger Enable"
+        android:id="@+id/trigEnableButton"
+        android:layout_below="@+id/enableTButton"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Trigger Disable"
+        android:id="@+id/trigDisableButton"
+        android:layout_below="@+id/disableTButton"
+        android:layout_alignRight="@+id/disableTButton"
+        android:layout_alignEnd="@+id/disableTButton" />
 
 </RelativeLayout>
