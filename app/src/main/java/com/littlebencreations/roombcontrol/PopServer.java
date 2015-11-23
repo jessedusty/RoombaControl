@@ -14,10 +14,10 @@ import com.loopj.android.http.JsonHttpResponseHandler;
  */
 public class PopServer {
     private static final String LOG_TAG = PopServer.class.getSimpleName();
-    private static final String SERVER_URL = "http://155.246.204.55:8000";
+    private static final String SERVER_URL = "http://155.246.204.109:8000";
     private static final String COMMAND_EXT = "command";
-    public static final String ACTION_KEY = "command";
-    public static final String MESSAGE_KEY = "command";
+    public static final String ACTION_KEY = "action";
+    public static final String MESSAGE_KEY = "message";
 
 
     private JsonHttpResponseHandler mListener;

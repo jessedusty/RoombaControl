@@ -1,5 +1,6 @@
 package com.littlebencreations.roombcontrol;
 
+import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -24,7 +25,7 @@ import java.util.Map;
  */
 public class RoombaController {
     private static final String LOG_TAG = RoombaController.class.getSimpleName();
-    private static final String ACTION_USB_PERMISSION = "com.hariharan.arduinousb.USB_PERMISSION";
+    public static final String ACTION_USB_PERMISSION = "com.hariharan.arduinousb.USB_PERMISSION";
 
     private Context mContext;
 
@@ -39,6 +40,9 @@ public class RoombaController {
 
     private String currentAction;
 
+    // Ugh so sketch so so sketch
+    private MainActivity containerActivity;
+
     private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
     //Broadcast Receiver to automatically start and stop the Serial connection.
         @Override
@@ -49,9 +53,8 @@ public class RoombaController {
                     connection = usbManager.openDevice(device);
                     serialPort = UsbSerialDevice.createUsbSerialDevice(device, connection);
                     if (serialPort != null) {
-//                        connectButton.setEnabled(true);
-                        if (serialPort.open()) { //Set Serial Connection Parameters.
-//                            setUiEnabled(true);
+                        if (serialPort.open()) { //Set Serial Connection Parameters
+                            containerActivity.setUiEnabled(true);
                             serialPort.setBaudRate(19200);
                             serialPort.setDataBits(UsbSerialInterface.DATA_BITS_8);
                             serialPort.setStopBits(UsbSerialInterface.STOP_BITS_1);
@@ -67,20 +70,17 @@ public class RoombaController {
                             System.out.println("SERIAL" + " PORT NOT OPEN");
                         }
                     } else {
-//                        connectButton.setEnabled(false);
                         System.out.println("SERIAL" + " PORT IS NULL");
                     }
                 } else {
                     System.out.println("SERIAL" + " PERM NOT GRANTED");
                 }
             } else if (intent.getAction().equals(UsbManager.ACTION_USB_DEVICE_ATTACHED)) {
-
-                System.out.println("connected");
+                System.out.println("usb connected");
                 connect();
-
             } else if (intent.getAction().equals(UsbManager.ACTION_USB_DEVICE_DETACHED)) {
-                System.out.println("disconnected");
-                connect();
+                System.out.println("usb disconnected");
+                disconnect();
             }
         }
     };
@@ -101,8 +101,10 @@ public class RoombaController {
     };
 
 
-    public RoombaController(Context context) {
-        mContext = context;
+    public RoombaController(Activity container) {
+        // Main Activity, please don't judge, please please
+        containerActivity = (MainActivity) container;
+        mContext = containerActivity.getApplicationContext();
         usbManager = (UsbManager) mContext.getSystemService(Context.USB_SERVICE);
 
         IntentFilter filter = new IntentFilter();
@@ -146,12 +148,17 @@ public class RoombaController {
         sendString("x");
     }
 
-    public void stopConnection() {
+    public void disconnect() {
+        if (serialPort == null) {
+            return;
+        }
+
         sendString("x");
         serialPort.close();
+        containerActivity.setUiEnabled(false);
     }
 
-    private void connect() {
+    public void connect() {
         HashMap<String, UsbDevice> usbDevices = usbManager.getDeviceList();
         if (!usbDevices.isEmpty()) {
             boolean foundArduino = false;

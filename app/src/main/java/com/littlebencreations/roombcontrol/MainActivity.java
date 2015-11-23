@@ -3,6 +3,7 @@ package com.littlebencreations.roombcontrol;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.usb.UsbDevice;
@@ -37,28 +38,30 @@ import cz.msebera.android.httpclient.Header;
 /**
  *
  */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener{
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
-    //private Button startButton, sendButton, clearButton, stopButton;
     private Button connectButton, disconnectButton;
     private Button forwardButton, reverseButton, leftButton, rightButton, stopMoveButton;
     private Button enableTButton, disableTButton;
-    private Button trigEnableButton, trigDisableButton;
 
     private TextView distanceText, popcornText;
 
     private PopServer mServer;
     private RoombaController roombaController;
 
+    private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        //Broadcast Receiver to automatically start and stop the Serial connection.
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent.getAction().equals(RoombaController.ACTION_USB_PERMISSION)) {
+
+            }
+
+        }
+    };
 
     void setUiEnabled(boolean state) {
-        //        stopButton.setEnabled(bool);
-       /* if (serialPort == null) {
-            //connectButton.setEnabled(false);
-        } else {
-
-        }*/
         connectButton.setEnabled(!state);
         if (connectButton != null) {
             disconnectButton.setEnabled(state);
@@ -80,14 +83,23 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         connectButton = (Button)findViewById(R.id.connectButton);
+        connectButton.setOnClickListener(this);
         disconnectButton = (Button)findViewById(R.id.disconnectButton);
+        disconnectButton.setOnClickListener(this);
         forwardButton = (Button)findViewById(R.id.forwardButton);
+        forwardButton.setOnClickListener(this);
         reverseButton = (Button)findViewById(R.id.reverseButton);
+        reverseButton.setOnClickListener(this);
         leftButton = (Button)findViewById(R.id.leftButton);
+        leftButton.setOnClickListener(this);
         rightButton = (Button)findViewById(R.id.rightButton);
+        rightButton.setOnClickListener(this);
         stopMoveButton = (Button)findViewById(R.id.stopMoveButton);
+        stopMoveButton.setOnClickListener(this);
         enableTButton = (Button)findViewById(R.id.startTrackingButton);
+        enableTButton.setOnClickListener(this);
         disableTButton = (Button)findViewById(R.id.stopTrackingButton);
+        disableTButton.setOnClickListener(this);
         /*
         trigEnableButton = (Button)findViewById(R.id.trigEnableButton);
         trigDisableButton = (Button)findViewById(R.id.trigDisableButton);
@@ -111,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
         private final PopServer SERVER;
         private final TextView MESSAGE_VIEW;
 
-        private final long UPDATE_INTERVOL = 500; // update every half second // MILLISECONDS
+        private final long UPDATE_INTERVOL = 1000; // update every half second // MILLISECONDS
         private Timer callTimer;
 
         public ServerCaller(Context context, RoombaController controller, final TextView messageView) {
@@ -155,7 +167,6 @@ public class MainActivity extends AppCompatActivity {
 
                 @Override
                 public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
-                    super.onFailure(statusCode, headers, throwable, errorResponse);
                     Toast.makeText(CONTEXT, "Error with server: " + errorResponse.toString(),
                             Toast.LENGTH_LONG).show();
                 }
@@ -173,8 +184,8 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     SERVER.getCommand();
-                                   }
-                               }, 0, UPDATE_INTERVOL);
+                   }
+               }, 0, UPDATE_INTERVOL);
             return null;
         }
 
@@ -184,27 +195,29 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void directionButtonPressed(View view) {
-        TextView origin = (TextView)view;
-        switch ((String)origin.getText()) {
-            case "Forward":
-                roombaController.goForward();
-                break;
-            case "Backward":
-                roombaController.goBackward();
-                break;
-            case "Left":
-                roombaController.goLeft();
-                break;
-            case "Right":
-                roombaController.goRight();
-                break;
-            case "Stop":
-                roombaController.stopMoving();
-                break;
+    @Override
+    public void onClick(View v) {
+        int id = v.getId();
+
+        if (id == forwardButton.getId()) {
+            roombaController.goForward();
+        } else if (id == reverseButton.getId()) {
+            roombaController.goBackward();
+        } else if (id == leftButton.getId()) {
+            roombaController.goLeft();
+        } else if (id == rightButton.getId()) {
+            roombaController.goRight();
+        } else if (id == stopMoveButton.getId()) {
+            roombaController.stopMoving();
+        } else if (id == connectButton.getId()) {
+            roombaController.connect();
+        } else if (id == disconnectButton.getId()) {
+            roombaController.disconnect();
+        } else if (id == enableTButton.getId()) {
+
+        } else if (id == disableTButton.getId()) {
 
         }
-
     }
 
 }
