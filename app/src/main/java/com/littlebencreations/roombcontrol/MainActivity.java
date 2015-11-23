@@ -39,50 +39,26 @@ import cz.msebera.android.httpclient.Header;
  */
 public class MainActivity extends AppCompatActivity {
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
-    public final String ACTION_USB_PERMISSION = "com.hariharan.arduinousb.USB_PERMISSION";
 
     //private Button startButton, sendButton, clearButton, stopButton;
-    private Button connectButton, disconnectButton, forwardButton, backwardButton;
-    private TextView distanceText;
-    private UsbManager usbManager;
-    private UsbDevice device;
-    private UsbSerialDevice serialPort;
-    private UsbDeviceConnection connection;
+    private Button connectButton, disconnectButton;
+    private Button forwardButton, reverseButton, leftButton, rightButton, stopMoveButton;
+    private Button enableTButton, disableTButton;
+    private Button trigEnableButton, trigDisableButton;
+
+    private TextView distanceText, popcornText;
 
     private PopServer mServer;
     private RoombaController roombaController;
 
 
-
-    TextView distanceText;
-    UsbManager usbManager;
-    UsbDevice device;
-    UsbSerialDevice serialPort;
-    UsbDeviceConnection connection;
-
-    UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback() { //Defining a Callback which triggers whenever data is read.
-        @Override
-        public void onReceivedData(byte[] bytes) {
-            String data = null;
-            try {
-                data = new String(bytes, "UTF-8");
-                data.concat("/n");
-                //tvAppend(textView, data);
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
-            System.out.println(data);
-        }
-    };
-
-
     void setUiEnabled(boolean state) {
         //        stopButton.setEnabled(bool);
-        if (serialPort == null) {
+       /* if (serialPort == null) {
             //connectButton.setEnabled(false);
         } else {
 
-        }
+        }*/
         connectButton.setEnabled(!state);
         if (connectButton != null) {
             disconnectButton.setEnabled(state);
@@ -96,71 +72,12 @@ public class MainActivity extends AppCompatActivity {
             trigEnableButton.setEnabled(state);
             trigDisableButton.setEnabled(state);
         }
-
     }
-
-    private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() { //Broadcast Receiver to automatically start and stop the Serial connection.
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (intent.getAction().equals(ACTION_USB_PERMISSION)) {
-                boolean granted = intent.getExtras().getBoolean(UsbManager.EXTRA_PERMISSION_GRANTED);
-                if (granted) {
-                    connection = usbManager.openDevice(device);
-                    serialPort = UsbSerialDevice.createUsbSerialDevice(device, connection);
-                    if (serialPort != null) {
-                        connectButton.setEnabled(true);
-                        if (serialPort.open()) { //Set Serial Connection Parameters.
-                            setUiEnabled(true);
-                            serialPort.setBaudRate(19200);
-                            serialPort.setDataBits(UsbSerialInterface.DATA_BITS_8);
-                            serialPort.setStopBits(UsbSerialInterface.STOP_BITS_1);
-                            serialPort.setParity(UsbSerialInterface.PARITY_NONE);
-                            serialPort.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
-                            serialPort.read(mCallback);
-                            //tvAppend(textView,"Serial Connection Opened!\n");
-
-                            System.out.println("connection opened");
-                            sendString("o");
-
-                        } else {
-                            System.out.println("SERIAL" + " PORT NOT OPEN");
-                        }
-                    } else {
-                        connectButton.setEnabled(false);
-                        System.out.println("SERIAL" + " PORT IS NULL");
-                    }
-                } else {
-                    System.out.println("SERIAL" + " PERM NOT GRANTED");
-                }
-            } else if (intent.getAction().equals(UsbManager.ACTION_USB_DEVICE_ATTACHED)) {
-
-                System.out.println("connected");
-                onClickStart(connectButton);
-
-            } else if (intent.getAction().equals(UsbManager.ACTION_USB_DEVICE_DETACHED)) {
-                System.out.println("disconnected");
-                onClickStop(disconnectButton);
-
-            }
-        }
-
-        ;
-    };
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        usbManager = (UsbManager) getSystemService(this.USB_SERVICE);
-
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(ACTION_USB_PERMISSION);
-        filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
-        filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
-        registerReceiver(broadcastReceiver, filter);
-
 
         connectButton = (Button)findViewById(R.id.connectButton);
         disconnectButton = (Button)findViewById(R.id.disconnectButton);
@@ -169,83 +86,19 @@ public class MainActivity extends AppCompatActivity {
         leftButton = (Button)findViewById(R.id.leftButton);
         rightButton = (Button)findViewById(R.id.rightButton);
         stopMoveButton = (Button)findViewById(R.id.stopMoveButton);
-        enableTButton = (Button)findViewById(R.id.enableTButton);
+        /*enableTButton = (Button)findViewById(R.id.enableTButton);
         disableTButton = (Button)findViewById(R.id.disableTButton);
         trigEnableButton = (Button)findViewById(R.id.trigEnableButton);
-        trigDisableButton = (Button)findViewById(R.id.trigDisableButton);
+        trigDisableButton = (Button)findViewById(R.id.trigDisableButton);*/
         setUiEnabled(false);
 
-        roombaController = new RoombaController();
+        roombaController = new RoombaController(this);
         distanceText = (TextView) findViewById(R.id.distanceText);
         popcornText = (TextView) findViewById(R.id.popcornMessage);
 
         // Should just be calling and updating in the background
         ServerCaller serverCaller = new ServerCaller(this, roombaController, popcornText);
         serverCaller.execute();
-    }
-
-    public void sendString(String string) {
-        if (serialPort == null) {
-            System.out.println("Device not attached");
-            return;
-        }
-        serialPort.write(string.getBytes());
-    }
-
-    public void goForward(View view) {
-        sendString("f");
-    }
-
-    public void goBackward(View view) {
-        sendString("b");
-    }
-
-    public void goLeft(View view) {
-        sendString("l");
-    }
-
-    public void goRight(View view) {
-        sendString("r");
-    }
-
-    public void stopMoving(View view) {
-        sendString("s");
-    }
-    
-    public void sleepRoomba(View view) {
-        sendString("x");
-    }
-
-    public void onClickStop(View view) {
-        sendString("x");
-        setUiEnabled(false);
-        serialPort.close();
-        //tvAppend(textView,"\nSerial Connection Closed! \n");
-    }
-
-    public void onClickStart(View view) {
-
-        HashMap<String, UsbDevice> usbDevices = usbManager.getDeviceList();
-        if (!usbDevices.isEmpty()) {
-            boolean keep = true;
-            for (Map.Entry<String, UsbDevice> entry : usbDevices.entrySet()) {
-                device = entry.getValue();
-                int deviceVID = device.getVendorId();
-                if (deviceVID == 0x2341)//Arduino Vendor ID
-                {
-                    PendingIntent pi = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
-                    usbManager.requestPermission(device, pi);
-                    keep = false;
-                } else {
-                    connection = null;
-                    device = null;
-                }
-
-                if (!keep)
-                    break;
-            }
-        }
-        //sendString("o");
     }
 
     private static class ServerCaller extends AsyncTask<Void, String, Void> {
@@ -277,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
                         if (response.has(PopServer.MESSAGE_KEY)) {
                             message = response.getString(PopServer.MESSAGE_KEY);
                             // Could also post this as a progress update
-                            messageView.setText(message);
+                            MESSAGE_VIEW.setText(message);
                         }
                     } catch (JSONException e) {
                         Log.e(LOG_TAG, "Problem with pop server response", e);

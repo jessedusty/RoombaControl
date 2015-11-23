@@ -43,7 +43,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Stop"
-            android:id="@+id/button4"
+            android:id="@+id/stopMoveButton"
             android:layout_below="@+id/forwardButton"
             android:layout_alignRight="@+id/forwardButton"
             android:layout_alignEnd="@+id/forwardButton" />
@@ -53,7 +53,6 @@
             android:layout_height="wrap_content"
             android:text="Reverse"
             android:id="@+id/reverseButton"
-            android:layout_below="@+id/button4"
             android:layout_alignRight="@+id/forwardButton" />
 
     </RelativeLayout>
@@ -104,7 +103,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Stop Tracking"
-            android:id="@+id/stopButton"
+            android:id="@+id/stopTrackingButton"
             android:layout_centerVertical="true"
             android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true" />
